@@ -1,13 +1,12 @@
 import logging
 
-from flask import redirect, Flask, request
+from flask import redirect, Flask, request, render_template
 from flask.helpers import get_env, get_debug_flag
-from flask_oidc import OpenIDConnect
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 
-from flaskoidc.config import BaseConfig
-from flaskoidc.store import SessionCredentialStore
+from flaskoidc_azure.config import BaseConfig
+from .auth_azure import *
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,31 +27,15 @@ class FlaskOIDC(Flask):
         token = None
         if 'Authorization' in request.headers and request.headers['Authorization'].startswith('Bearer '):
             token = request.headers['Authorization'].split(None, 1)[1].strip()
-        if 'access_token' in request.form:
+        elif 'access_token' in request.form:
             token = request.form['access_token']
         elif 'access_token' in request.args:
             token = request.args['access_token']
+        else:
+            token = get_token_from_cache(self.config['SCOPE'])
 
-        if token:
-            validity = self.oidc.validate_token(token)
-            # This check True is required to make sure the validity is checked
-            if validity is True:
-                return
-
-        # If not accepting a request, verify if the user is logged in
-        with self.app_context():
-            try:
-                if self.oidc.user_loggedin:
-                    access_token = self.oidc.get_access_token()
-                    assert access_token
-                    is_valid = self.oidc.validate_token(access_token)
-                    assert is_valid is True
-                return self.oidc.authenticate_or_redirect()
-            except (AssertionError, AttributeError):
-                # In case the session is forced logout from keycloak but still in
-                # the cookie, remove from cookie and try to login again
-                self.oidc.logout()
-                return self.oidc.authenticate_or_redirect()
+        if not token:
+            return redirect(url_for("login"))
 
     def __init__(self, *args, **kwargs):
         super(FlaskOIDC, self).__init__(*args, **kwargs)
@@ -66,32 +49,43 @@ class FlaskOIDC(Flask):
         _session = Session(self)
         _session.app.session_interface.db.create_all()
 
-        # Initiate OpenIDConnect using the SQLAlchemy backed session store
-        _oidc = OpenIDConnect(self, SessionCredentialStore())
-        self.oidc = _oidc
-
         # Register the before request function that will make sure each
         # request is authenticated before processing
         self.before_request(self._before_request)
 
-        @self.route('/login')
+        @self.route('/login')  # catch_all
         def login():
-            return redirect('/')
+            session["state"] = str(uuid.uuid4())
+            # Technically we could use empty list [] as scopes to do just sign in,
+            # here we choose to also collect end user consent upfront
+            auth_url = build_auth_url(scopes=self.config['SCOPE'], state=session["state"])
+            return redirect(auth_url)
 
-        @self.route('/logout')
+        @self.route('/oidc_callback')  # catch_all
+        def authorized():
+            if request.args.get('state') != session.get("state"):
+                return redirect(url_for("index"))  # No-OP. Goes back to Index page
+            if "error" in request.args:  # Authentication/Authorization failure
+                return render_template("auth_error.html", result=request.args)
+            if request.args.get('code'):
+                cache = load_cache()
+                result = build_msal_app(cache=cache).acquire_token_by_authorization_code(
+                    request.args['code'],
+                    scopes=self.config['SCOPE'],  # Misspelled scope would cause an HTTP 400 error here
+                    redirect_uri=url_for("authorized", _external=True))
+                if "error" in result:
+                    return render_template("auth_error.html", result=result)
+                session["user"] = result.get("id_token_claims")
+                save_cache(cache)
+                self.config['PUT_USER_METHOD'](self)
+            return redirect(url_for("index"))
+
+        @self.route('/logout')  # catch_all
         def logout():
-            """
-            The logout function that logs user out from Keycloak.
-            :return: Redirects to the Keycloak login page
-            """
-            _oidc.logout()
-            redirect_url = request.url_root.strip('/')
-            keycloak_issuer = _oidc.client_secrets.get('issuer')
-            keycloak_logout_url = '{}/protocol/openid-connect/logout'. \
-                format(keycloak_issuer)
-
-            return redirect('{}?redirect_uri={}'.format(keycloak_logout_url,
-                                                        redirect_url))
+            session.clear()  # Wipe out user and its token cache from session
+            return redirect(  # Also logout from your tenant's web session
+                self.config['AUTHORITY'] + "/oauth2/v2.0/logout" +
+                "?post_logout_redirect_uri=" + url_for("index", _external=True))
 
     def make_config(self, instance_relative=False):
         """

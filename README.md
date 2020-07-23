@@ -9,7 +9,7 @@ A wrapper of Flask with pre-configured OIDC support. Ideal for microservices arc
 After simply installing the flaskoidc you can simply use it like below:
 
 ```python
-from flaskoidc import FlaskOIDC
+from flaskoidc_azure import FlaskOIDC
 app = FlaskOIDC(__name__)
 ``` 
 
@@ -18,8 +18,8 @@ app = FlaskOIDC(__name__)
 Please make sure to extend your configurations from `BaseConfig`.
 
 ```python
-from flaskoidc import FlaskOIDC
-from flaskoidc.config import BaseConfig
+from flaskoidc_azure import FlaskOIDC
+from flaskoidc_azure.config import BaseConfig
 
 # Custom configuration class, a subclass of BaseConfig
 CustomConfig(BaseConfig):

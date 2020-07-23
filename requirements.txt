@@ -1,4 +1,7 @@
 FLASK
-flask_oidc
 flask-sqlalchemy
 flask-session
+
+# Microsoft Authentication Library (MSAL)
+# Upstream url: https://github.com/AzureAD/microsoft-authentication-library-for-python
+msal>=0.6.1,<2

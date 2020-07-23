@@ -6,15 +6,15 @@ requirements_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'r
 with open(requirements_path) as requirements_file:
     requirements = requirements_file.readlines()
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 
 setup(
-    name='flaskoidc',
+    name='flaskoidc_azure',
     version=__version__,
     description='Flask wrapper with pre-configured OIDC support',
-    url='https://github.com/verdan/flaskoidc.git',
-    author='Verdan Mahmood',
-    author_email='verdan.mahmood@gmail.com',
+    url='https://github.com/kylg/flaskoidc_azure.git',
+    author='Jerry',
+    author_email='info@kylg.com',
     packages=find_packages(exclude=['tests*']),
     include_package_data=True,
     dependency_links=[],
