@@ -9,9 +9,9 @@ with open(requirements_path) as requirements_file:
 __version__ = '0.0.5'
 
 setup(
-    name='flaskoidc_azure',
+    name='flaskoidc-azure',
     version=__version__,
-    description='Flask wrapper with pre-configured OIDC support',
+    description='Flask wrapper with pre-configured azure OIDC support',
     url='https://github.com/kylg/flaskoidc_azure.git',
     author='Jerry',
     author_email='info@kylg.com',
