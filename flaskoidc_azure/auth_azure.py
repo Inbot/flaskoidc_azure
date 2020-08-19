@@ -33,6 +33,9 @@ def build_auth_url(authority=None, scopes=None, state=None):
 
 def get_token_from_cache(scope=None):
     cache = load_cache()  # This web app maintains one cache per session
+    if session.get("token_cache"):
+        return cache.find("AccessToken")[0]
+
     cca = build_msal_app(cache=cache)
     accounts = cca.get_accounts()
     if accounts:  # So all account(s) belong to the current signed-in user
@@ -42,7 +45,12 @@ def get_token_from_cache(scope=None):
 
 
 def get_user(token=None):
-    return requests.get(  # Use token to call downstream service
-        app.config['OIDC_USER_ENDPOINT'],
-        headers={'Authorization': 'Bearer ' + token['access_token']},
-    ).json()
+    if session.get("auth_user"):
+        return session["auth_user"]
+    else:
+        user = requests.get(  # Use token to call downstream service
+            app.config['OIDC_USER_ENDPOINT'],
+            headers={'Authorization': 'Bearer ' + token['secret']},
+        ).json()
+        session["auth_user"] = user
+        return user
