@@ -53,6 +53,8 @@ class FlaskOIDC(Flask):
         # request is authenticated before processing
         self.before_request(self._before_request)
 
+        self.jinja_env.globals.update(_build_auth_url=build_auth_url)  # Used in template
+
         @self.route('/login')  # catch_all
         def login():
             session["state"] = str(uuid.uuid4())
