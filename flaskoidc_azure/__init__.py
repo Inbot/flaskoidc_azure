@@ -77,9 +77,17 @@ class FlaskOIDC(Flask):
                     redirect_uri=url_for("authorized", _external=True))
                 if "error" in result:
                     return render_template("auth_error.html", result=result)
-                session["user"] = result.get("id_token_claims")
+                user_info = result.get("id_token_claims")
+                if not user_info:
+                    LOGGER.info("failed to get user info for state {}, code {}".format(request.args.get('state'), request.args.get('code')))
+                    return render_template("auth_error.html", result=result)
+                user_info = query_user_info(cache.find("AccessToken")[0])
+                # the user is authenticated only if successfully adding the user
+                user = self.config['PUT_USER_METHOD'](self, user_info)
+                if not user:
+                    return render_template("auth_error.html", result=request.args)
                 save_cache(cache)
-                self.config['PUT_USER_METHOD'](self)
+                session["auth_user"] = user
             return redirect(url_for("index"))
 
         @self.route('/logout')  # catch_all
