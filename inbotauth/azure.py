@@ -1,10 +1,10 @@
 import uuid
 import requests
-
 from flask import session, url_for
 from flask import current_app as app
 import msal
 from typing import Dict
+
 
 def load_cache():
     cache = msal.SerializableTokenCache()
@@ -35,7 +35,6 @@ def get_token_from_cache(scope=None):
     cache = load_cache()  # This web app maintains one cache per session
     if session.get("token_cache"):
         return cache.find("AccessToken")[0]
-
     cca = build_msal_app(cache=cache)
     accounts = cca.get_accounts()
     if accounts:  # So all account(s) belong to the current signed-in user

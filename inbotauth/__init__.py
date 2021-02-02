@@ -1,12 +1,14 @@
+import uuid
 import logging
-
-from flask import redirect, Flask, request, render_template
+from flask import Flask, redirect, request, render_template, url_for, session
 from flask.helpers import get_env, get_debug_flag
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 
-from flaskoidc_azure.config import BaseConfig
-from .auth_azure import *
+from inbotauth.config import BaseConfig
+from inbotauth.azure import (load_cache, save_cache, build_msal_app,
+                             build_auth_url, get_token_from_cache,
+                             query_user_info, get_user)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,9 +35,8 @@ class FlaskOIDC(Flask):
             token = request.args['access_token']
         else:
             token = get_token_from_cache(self.config['SCOPE'])
-
         if not token:
-            return redirect(url_for("login"))
+            return redirect('/login')
 
     def __init__(self, *args, **kwargs):
         super(FlaskOIDC, self).__init__(*args, **kwargs)
@@ -55,8 +56,8 @@ class FlaskOIDC(Flask):
 
         self.jinja_env.globals.update(_build_auth_url=build_auth_url)  # Used in template
 
-        @self.route('/login')  # catch_all
-        def login():
+        @self.route('/mslogin')  # catch_all
+        def mslogin():
             session["state"] = str(uuid.uuid4())
             # Technically we could use empty list [] as scopes to do just sign in,
             # here we choose to also collect end user consent upfront
@@ -66,7 +67,7 @@ class FlaskOIDC(Flask):
         @self.route('/oidc_callback')  # catch_all
         def authorized():
             if request.args.get('state') != session.get("state"):
-                return redirect(url_for("index"))  # No-OP. Goes back to Index page
+                return redirect('index')  # No-OP. Goes back to Index page
             if "error" in request.args:  # Authentication/Authorization failure
                 return render_template("auth_error.html", result=request.args)
             if request.args.get('code'):
@@ -79,23 +80,26 @@ class FlaskOIDC(Flask):
                     return render_template("auth_error.html", result=result)
                 user_info = result.get("id_token_claims")
                 if not user_info:
-                    LOGGER.info("failed to get user info for state {}, code {}".format(request.args.get('state'), request.args.get('code')))
+                    LOGGER.info("failed to get user info for state {}, code {}".format(
+                        request.args.get('state'), request.args.get('code')))
                     return render_template("auth_error.html", result=result)
                 user_info = query_user_info(cache.find("AccessToken")[0])
                 # the user is authenticated only if successfully adding the user
                 user = self.config['PUT_USER_METHOD'](self, user_info)
+                print('user new')
+                print(user)
                 if not user:
                     return render_template("auth_error.html", result=request.args)
                 save_cache(cache)
                 session["auth_user"] = user
-            return redirect(url_for("index"))
+            return redirect('index')
 
         @self.route('/logout')  # catch_all
         def logout():
             session.clear()  # Wipe out user and its token cache from session
             return redirect(  # Also logout from your tenant's web session
-                self.config['AUTHORITY'] + "/oauth2/v2.0/logout" +
-                "?post_logout_redirect_uri=" + url_for("index", _external=True))
+                self.config['AUTHORITY'] + "/oauth2/v2.0/logout" + "?post_logout_redirect_uri=" \
+                + url_for("index", _external=True))
 
     def make_config(self, instance_relative=False):
         """

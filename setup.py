@@ -9,16 +9,15 @@ with open(requirements_path) as requirements_file:
 __version__ = '0.0.11'
 
 setup(
-    name='flaskoidc-azure',
+    name='inbotauth',
     version=__version__,
     description='Flask wrapper with pre-configured azure OIDC support',
-    url='https://github.com/kylg/flaskoidc_azure.git',
-    author='Jerry',
-    author_email='info@kylg.org',
+    url='https://github.com/Inbot/inbotauth.git',
+    author='Aarni',
+    author_email='aarni@inbot.io',
     packages=find_packages(exclude=['tests*']),
     include_package_data=True,
     dependency_links=[],
     install_requires=requirements,
-    python_requires=">=3.6",
-
+    python_requires=">=3.6"
 )

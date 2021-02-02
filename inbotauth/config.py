@@ -1,18 +1,19 @@
 import os
 import json
 from typing import Dict, Optional
+from inbotauth.user import put_user
 
 
 def get_client_secrets() -> Optional[Dict]:
-    with open(os.getenv('FLASK_OIDC_CLIENT_SECRETS')) as f:
+    with open(os.getenv('OIDC_CLIENT_SECRETS')) as f:
         return json.load(f)
 
 
-class BaseConfig(object):
+class BaseConfig:
     # Application Settings
     SECRET_KEY = os.environ.get('FLASK_OIDC_SECRET_KEY', 'base-dap-config-secret-key')
     WHITELISTED_ENDPOINTS = os.environ.get('FLASK_OIDC_WHITELISTED_ENDPOINTS',
-                                           "status,healthcheck,health")
+                                           "status,healthcheck,health,login,mslogin,oidc_callback")
 
     # Logging Settings
     LOG_FORMAT = '%(asctime)s.%(msecs)03d [%(levelname)s] %(module)s.%(funcName)s:%(lineno)d (%(process)d:' \
@@ -21,7 +22,7 @@ class BaseConfig(object):
     LOG_LEVEL = 'INFO'
 
     # OIDC Settings
-    OIDC_CLIENT_SECRETS = os.environ.get('FLASK_OIDC_CLIENT_SECRETS', 'config/client_secrets.json')
+    OIDC_CLIENT_SECRETS = os.environ.get('OIDC_CLIENT_SECRETS', 'client_secrets.json')
     OIDC_INTROSPECTION_AUTH_METHOD = 'client_secret_post'
     OIDC_ID_TOKEN_COOKIE_SECURE = False
 
@@ -41,7 +42,7 @@ class BaseConfig(object):
     # if not CLIENT_SECRET:
     #     raise ValueError("Need to define CLIENT_SECRET environment variable")
 
-    AUTHORITY = get_client_secrets()['web']['auth_uri']  # For multi-tenant app
+    AUTHORITY = get_client_secrets()['web']['issuer']  # For multi-tenant app
     # AUTHORITY = "https://login.microsoftonline.com/Enter_the_Tenant_Name_Here"
 
     # You can find more Microsoft Graph API endpoints from Graph Explorer
@@ -56,3 +57,5 @@ class BaseConfig(object):
     # https://docs.microsoft.com/en-us/graph/permissions-reference
     SCOPE = ["User.ReadBasic.All"]
     # SCOPE = ["openid,email,profile,offline_access"]
+
+    PUT_USER_METHOD = put_user
