@@ -13,7 +13,7 @@ class BaseConfig:
     # Application Settings
     SECRET_KEY = os.environ.get('FLASK_OIDC_SECRET_KEY', 'base-dap-config-secret-key')
     WHITELISTED_ENDPOINTS = os.environ.get('FLASK_OIDC_WHITELISTED_ENDPOINTS',
-                                           "status,healthcheck,health,login,mslogin,oidc_callback")
+                                           "status,healthcheck,health,login,mslogin,oidc_callback,static")
 
     # Logging Settings
     LOG_FORMAT = '%(asctime)s.%(msecs)03d [%(levelname)s] %(module)s.%(funcName)s:%(lineno)d (%(process)d:' \

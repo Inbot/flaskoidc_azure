@@ -36,7 +36,7 @@ class FlaskOIDC(Flask):
         else:
             token = get_token_from_cache(self.config['SCOPE'])
         if not token:
-            return redirect('/login')
+            return redirect(url_for('login'))
 
     def __init__(self, *args, **kwargs):
         super(FlaskOIDC, self).__init__(*args, **kwargs)
@@ -56,6 +56,10 @@ class FlaskOIDC(Flask):
 
         self.jinja_env.globals.update(_build_auth_url=build_auth_url)  # Used in template
 
+        @self.route('/login')  # catch_all
+        def login():
+            return render_template("login.html")
+
         @self.route('/mslogin')  # catch_all
         def mslogin():
             session["state"] = str(uuid.uuid4())
@@ -67,7 +71,7 @@ class FlaskOIDC(Flask):
         @self.route('/oidc_callback')  # catch_all
         def authorized():
             if request.args.get('state') != session.get("state"):
-                return redirect('index')  # No-OP. Goes back to Index page
+                return redirect(url_for('index'))  # No-OP. Goes back to Index page
             if "error" in request.args:  # Authentication/Authorization failure
                 return render_template("auth_error.html", result=request.args)
             if request.args.get('code'):
@@ -92,7 +96,7 @@ class FlaskOIDC(Flask):
                     return render_template("auth_error.html", result=request.args)
                 save_cache(cache)
                 session["auth_user"] = user
-            return redirect('index')
+            return redirect(url_for('index'))
 
         @self.route('/logout')  # catch_all
         def logout():
