@@ -94,6 +94,7 @@ class FlaskOIDC(Flask):
                     return render_template("auth_error.html", result=request.args)
                 save_cache(cache)
                 session["auth_user"] = user
+                session['login_type'] = 'microsoft'
             return redirect(url_for('index'))
 
         @self.route('/logout')  # catch_all
