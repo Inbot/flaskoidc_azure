@@ -90,8 +90,6 @@ class FlaskOIDC(Flask):
                 user_info = query_user_info(cache.find("AccessToken")[0])
                 # the user is authenticated only if successfully adding the user
                 user = self.config['PUT_USER_METHOD'](self, user_info)
-                print('user new')
-                print(user)
                 if not user:
                     return render_template("auth_error.html", result=request.args)
                 save_cache(cache)
