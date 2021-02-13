@@ -1,4 +1,4 @@
-amundsen-common==0.5.9
+inbot-common==0.5.9
 Flask>=1.0.2
 marshmallow>=2.21.0
 msal==1.8.0

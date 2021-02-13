@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 from flask import Flask
-from amundsen_common.models.user import UserSchema, User
+from inbot_common.models.user import UserSchema, User
 from marshmallow import ValidationError
 
 
