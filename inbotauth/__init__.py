@@ -76,10 +76,11 @@ class FlaskOIDC(Flask):
                 return render_template("auth_error.html", result=request.args)
             if request.args.get('code'):
                 cache = load_cache()
+                redirect_uri = self.config['OVERWRITE_REDIRECT_URI'] or url_for("authorized", _external=True)
                 result = build_msal_app(cache=cache).acquire_token_by_authorization_code(
                     request.args['code'],
                     scopes=self.config['SCOPE'],  # Misspelled scope would cause an HTTP 400 error here
-                    redirect_uri=url_for("authorized", _external=True))
+                    redirect_uri=redirect_uri)
                 if "error" in result:
                     return render_template("auth_error.html", result=result)
                 user_info = result.get("id_token_claims")

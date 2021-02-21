@@ -53,6 +53,8 @@ class BaseConfig:
     # The absolute URL must match the redirect URI you set
     # in the app's registration in the Azure portal.
 
+    OVERWRITE_REDIRECT_URI = os.environ.get("OVERWRITE_REDIRECT_URI", False)
+
     # You can find the proper permission names from this document
     # https://docs.microsoft.com/en-us/graph/permissions-reference
     SCOPE = ["User.ReadBasic.All"]
