@@ -8,7 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 from inbotauth.config import BaseConfig
 from inbotauth.azure import (load_cache, save_cache, build_msal_app,
                              build_auth_url, get_token_from_cache,
-                             query_user_info, get_user)
+                             query_user_info, get_user, tenant_is_valid)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -83,12 +83,17 @@ class FlaskOIDC(Flask):
                     redirect_uri=redirect_uri)
                 if "error" in result:
                     return render_template("auth_error.html", result=result)
-                user_info = result.get("id_token_claims")
-                if not user_info:
+                user_data = result.get("id_token_claims")
+                if not user_data:
                     LOGGER.info("failed to get user info for state {}, code {}".format(
                         request.args.get('state'), request.args.get('code')))
                     return render_template("auth_error.html", result=result)
+                tenant_id = user_data.get('tid')
+                if not tenant_is_valid(tenant_id):
+                    LOGGER.info("Invalid tenant: {}".format(tenant_id))
+                    return render_template("auth_error.html", result=result)
                 user_info = query_user_info(cache.find("AccessToken")[0])
+                user_info['tenant_id'] = tenant_id
                 # the user is authenticated only if successfully adding the user
                 user = self.config['PUT_USER_METHOD'](self, user_info)
                 if not user:
