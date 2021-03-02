@@ -105,9 +105,10 @@ class FlaskOIDC(Flask):
 
         @self.route('/logout')  # catch_all
         def logout():
+            authority = 'https://login.microsoftonline.com/' + session['auth_user']['tenant_id']
             session.clear()  # Wipe out user and its token cache from session
             return redirect(  # Also logout from your tenant's web session
-                self.config['AUTHORITY'] + "/oauth2/v2.0/logout" + "?post_logout_redirect_uri=" \
+                authority + "/oauth2/v2.0/logout" + "?post_logout_redirect_uri=" \
                 + url_for("index", _external=True))
 
     def make_config(self, instance_relative=False):

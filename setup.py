@@ -13,7 +13,7 @@ setup(
     include_package_data=True,
     dependency_links=[],
     install_requires=[
-        'inbot-common==0.5.9',
+        'inbot-common==0.5.10',
         'Flask>=1.0.2',
         'Flask-Session>=0.3.0',
         'Flask-SQLAlchemy>=2.4.0',

@@ -42,9 +42,6 @@ class BaseConfig:
     # if not CLIENT_SECRET:
     #     raise ValueError("Need to define CLIENT_SECRET environment variable")
 
-    AUTHORITY = get_client_secrets()['web']['issuer']  # For multi-tenant app
-    # AUTHORITY = "https://login.microsoftonline.com/Enter_the_Tenant_Name_Here"
-
     # You can find more Microsoft Graph API endpoints from Graph Explorer
     # https://developer.microsoft.com/en-us/graph/graph-explorer
     OIDC_USER_ENDPOINT = get_client_secrets()['web']['userinfo_uri']  # This resource requires no admin consent
