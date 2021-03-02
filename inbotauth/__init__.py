@@ -8,9 +8,11 @@ from flask_sqlalchemy import SQLAlchemy
 from inbotauth.config import BaseConfig
 from inbotauth.azure import (load_cache, save_cache, build_msal_app,
                              build_auth_url, get_token_from_cache,
-                             query_user_info, get_user, tenant_is_valid)
+                             query_user_info, get_user)
 
 LOGGER = logging.getLogger(__name__)
+
+ISSUER_BASE_URL = 'https://login.microsoftonline.com/'
 
 
 class FlaskOIDC(Flask):
@@ -44,6 +46,10 @@ class FlaskOIDC(Flask):
         # Setup Session Database
         _sql_db = SQLAlchemy(self)
         self.config["SESSION_SQLALCHEMY"] = _sql_db
+
+        class Tenant(_sql_db.Model):
+            id = _sql_db.Column(_sql_db.String(36), primary_key=True)
+            issuer_url = _sql_db.Column(_sql_db.String(255), unique=True, nullable=False)
 
         # Setup Session Store, that will hold the session information
         # in database. OIDC by default keep the sessions in memory
@@ -89,7 +95,7 @@ class FlaskOIDC(Flask):
                         request.args.get('state'), request.args.get('code')))
                     return render_template("auth_error.html", result=result)
                 tenant_id = user_data.get('tid')
-                if not tenant_is_valid(tenant_id):
+                if Tenant.query.get(tenant_id) is None:
                     LOGGER.info("Invalid tenant: {}".format(tenant_id))
                     return render_template("auth_error.html", result=result)
                 user_info = query_user_info(cache.find("AccessToken")[0])

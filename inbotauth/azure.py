@@ -6,8 +6,6 @@ import msal
 from typing import Dict
 
 
-VALID_TENANTS = ['dde68b07-d970-48ca-b552-26151e7df4ce', '3f974a22-44a5-49ef-aa8b-65e54e003797']
-
 def load_cache():
     cache = msal.SerializableTokenCache()
     if session.get("token_cache"):
@@ -66,9 +64,3 @@ def get_user(token=None):
         user = app.config['PUT_USER_METHOD'](app, user_info)
         session["auth_user"] = user
         return user
-
-
-def tenant_is_valid(tenant_id):
-    if tenant_id in VALID_TENANTS:
-        return True
-    return False
